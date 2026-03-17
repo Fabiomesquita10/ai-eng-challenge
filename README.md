@@ -17,6 +17,19 @@ The system is designed to mimic a real-world banking support workflow while show
 
 ---
 
+## 📚 Architecture Documentation
+
+For detailed architecture documentation (workflow, agent responsibilities, design principles), see the **[docs/](./docs/)** folder:
+
+- [System Architecture](./docs/01-ARCHITECTURE.md)
+- [Orchestration Workflow](./docs/02-WORKFLOW.md)
+- [Agent Responsibilities](./docs/03-AGENTS.md)
+- [Design Principles](./docs/04-DESIGN_PRINCIPLES.md)
+- [Why LangGraph](./docs/05-WHY_LANGGRAPH.md)
+- [Model Configuration & RAG](./docs/06-MODEL_TRAINING_AND_RAG.md)
+
+---
+
 ## 🧠 System Architecture
 
 The system is built around a **LangGraph-based orchestration layer**, where each node represents a specialized agent.
@@ -24,8 +37,10 @@ The system is built around a **LangGraph-based orchestration layer**, where each
 ### High-Level Flow
 
 ```
-User → Greeter → Bouncer → Specialist Router → Specialist → Guardrails → Response
+User → FastAPI → Greeter → Bouncer → Specialist Router (RAG) → Specialist → Guardrails → Response
 ```
+
+A **lightweight RAG layer** is used by the Specialist Router Agent to ground routing decisions in a structured knowledge base of banking departments, supported request types, and high-value services. This avoids relying purely on free-form LLM reasoning and improves consistency in request routing.
 
 ### Agents
 
@@ -47,11 +62,12 @@ User → Greeter → Bouncer → Specialist Router → Specialist → Guardrails
 
 #### 📞 Specialist Router Agent
 
+* Uses **RAG** over a departments/services knowledge base to ground routing decisions
 * Determines the correct domain expert based on:
 
   * User intent
   * Customer type
-  * Request complexity
+  * Retrieved department knowledge (topics, supported request types)
 
 #### 🎯 Specialist Agents
 
@@ -249,6 +265,7 @@ uvicorn app.main:app --reload
 * Separated agents by responsibility to reflect real-world systems
 * Avoided overusing LLMs in deterministic logic
 * Implemented session-based memory for multi-turn interactions
+* **RAG in Specialist Router** — grounds routing in a structured knowledge base (`departments.json`) instead of free-form LLM reasoning
 
 ---
 
