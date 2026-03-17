@@ -1,5 +1,6 @@
 """Workflow nodes."""
 
+from app.agents.greeter import greeter_agent as greeter_agent_impl
 from app.services import session_service
 
 
@@ -27,18 +28,8 @@ def load_session(state: dict) -> dict:
 
 
 def greeter_agent(state: dict) -> dict:
-    """
-    Greeter agent (stub).
-    For now: always asks for identification.
-    TODO: Add extraction + verification (2/3 rule).
-    """
-    # Stub: always need more info, ask for phone/IBAN
-    return {
-        "needs_more_info": True,
-        "is_identified": False,
-        "identification_failed": False,
-        "final_response": "Thanks for reaching out. To verify your identity, could you please provide your phone number or IBAN?",
-    }
+    """Greeter agent: extraction, merge, verification (2/3 rule)."""
+    return greeter_agent_impl(state)
 
 
 def save_session(state: dict) -> dict:

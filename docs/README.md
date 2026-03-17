@@ -15,6 +15,7 @@ This folder contains the technical architecture documentation for the AI-powered
 | [05 - Why LangGraph](./05-WHY_LANGGRAPH.md) | Rationale for using LangGraph as the orchestration framework |
 | [06 - Model Configuration & RAG](./06-MODEL_TRAINING_AND_RAG.md) | Model setup per agent, prompt design, and RAG strategy (Insurance Specialist) |
 | [07 - API Contract](./07-API.md) | FastAPI endpoints, request/response models, status mapping |
+| [08 - Observability](./08-OBSERVABILITY.md) | LangSmith tracing setup |
 
 ---
 

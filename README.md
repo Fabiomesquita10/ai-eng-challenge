@@ -206,20 +206,17 @@ The system enforces strict policies:
 
 ---
 
-## 🧪 Testing Strategy
+## 🧪 Testing
 
-The system is designed to be testable at multiple levels:
+```bash
+pytest tests/ -v
+```
 
-* Unit tests for:
-
-  * Identity verification
-  * Routing logic
-* Integration tests for:
-
-  * Full conversation flows
-* API tests for:
-
-  * `/chat` endpoint
+**Test coverage:**
+* `test_verification.py` — 2/3 rule, phone/name normalization
+* `test_response_builder.py` — merge, missing fields, response building
+* `test_greeter.py` — greeter flows (mocked extraction)
+* `test_api.py` — `/health`, `/chat` endpoints
 
 ---
 
@@ -246,12 +243,18 @@ The system is designed to be testable at multiple levels:
 
 ## 🐳 Running the Project
 
+**Production:**
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-or
+**Development (with reload):**
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+Code changes in `app/` and `docs/` will trigger an automatic reload.
 
+**Local (no Docker):**
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
