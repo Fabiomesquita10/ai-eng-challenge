@@ -16,6 +16,7 @@ This folder contains the technical architecture documentation for the AI-powered
 | [06 - Model Configuration & RAG](./06-MODEL_TRAINING_AND_RAG.md) | Model setup per agent, prompt design, and RAG strategy (Insurance Specialist) |
 | [07 - API Contract](./07-API.md) | FastAPI endpoints, request/response models, status mapping |
 | [08 - Observability](./08-OBSERVABILITY.md) | LangSmith tracing setup |
+| [09 - Greeter Explained](./09-GREETER_EXPLAINED.md) | Greeter flow, decision logic, and all outcomes |
 
 ---
 
