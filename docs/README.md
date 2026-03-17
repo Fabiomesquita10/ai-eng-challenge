@@ -18,6 +18,8 @@ This folder contains the technical architecture documentation for the AI-powered
 | [08 - Observability](./08-OBSERVABILITY.md) | LangSmith tracing setup |
 | [09 - Greeter Explained](./09-GREETER_EXPLAINED.md) | Greeter flow, decision logic, and all outcomes |
 | [10 - Bouncer Explained](./10-BOUNCER_EXPLAINED.md) | Bouncer flow, customer classification (premium/regular) |
+| [11 - Specialist Router Explained](./11-SPECIALIST_ROUTER_EXPLAINED.md) | Rule-based intent → specialist_route mapping |
+| [12 - RAG Insurance Pipeline](./12-RAG_INSURANCE_PIPELINE.md) | Hybrid + RRF + Rerank — three-stage retrieval (2024–2025) |
 
 ---
 

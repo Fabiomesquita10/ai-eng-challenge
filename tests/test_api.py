@@ -44,7 +44,7 @@ class TestChat:
         assert data.get("customer_type") is None  # Never reached bouncer
 
     def test_chat_identified_premium(self):
-        """Identified premium customer -> bouncer path, returns customer_type=premium."""
+        """Identified premium customer -> bouncer -> specialist_router, returns customer_type and route."""
         with patch(
             "app.agents.greeter.extract_identification",
             return_value={"name": "Fabio Mesquita", "phone": "912345678", "iban": None},
@@ -57,7 +57,23 @@ class TestChat:
         data = r.json()
         assert data["status"] == "completed"
         assert data["customer_type"] == "premium"
+        assert data["route"] == "card"  # default mock intent=card
         assert data["needs_more_info"] is False
+
+    def test_chat_identified_route_general(self):
+        """Unknown intent -> specialist_router fallback to general."""
+        with patch("app.agents.greeter.extract_intent", return_value=("unknown_intent", 0.5)), patch(
+            "app.agents.greeter.extract_identification",
+            return_value={"name": "John Smith", "phone": "+44123456789", "iban": None},
+        ):
+            r = client.post(
+                "/chat",
+                json={"session_id": "api-test-general", "message": "Hi, I'm John Smith, +44123456789"},
+            )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "completed"
+        assert data["route"] == "general"
 
     def test_chat_identified_regular(self):
         """Identified regular customer -> bouncer path, returns customer_type=regular."""

@@ -3,6 +3,7 @@
 from app.agents.bouncer import bouncer_agent
 from app.agents.greeter import greeter_agent as greeter_agent_impl
 from app.agents.guardrails import guardrails_agent
+from app.agents.specialist_router import specialist_router_agent
 from app.services import session_service
 
 
@@ -32,6 +33,11 @@ def load_session(state: dict) -> dict:
 def greeter_agent(state: dict) -> dict:
     """Greeter agent: extraction, merge, verification (2/3 rule)."""
     return greeter_agent_impl(state)
+
+
+def specialist_router(state: dict) -> dict:
+    """Specialist Router: intent → specialist_route (rule-based)."""
+    return specialist_router_agent(state)
 
 
 def save_session(state: dict) -> dict:

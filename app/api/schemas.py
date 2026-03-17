@@ -13,7 +13,7 @@ class ChatResponse(BaseModel):
     response: str
     status: Literal["needs_more_info", "completed", "rejected", "error"]
     customer_type: Optional[Literal["regular", "premium", "not_customer"]] = None
-    route: Optional[Literal["card", "loan", "insurance", "fraud", "premium"]] = None
+    route: Optional[Literal["card", "loan", "insurance", "fraud", "premium", "general"]] = None
     needs_more_info: bool = False
 
 

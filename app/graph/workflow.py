@@ -9,6 +9,7 @@ from .nodes import (
     greeter_agent,
     load_session,
     save_session,
+    specialist_router,
 )
 from .routing import route_after_greeter
 
@@ -20,6 +21,7 @@ def _build_graph():
     builder.add_node("greeter_agent", greeter_agent)
     builder.add_node("guardrails", guardrails_agent)
     builder.add_node("bouncer", bouncer_agent)
+    builder.add_node("specialist_router", specialist_router)
     builder.add_node("save_session", save_session)
 
     builder.add_edge(START, "load_session")
@@ -30,7 +32,8 @@ def _build_graph():
         {"guardrails": "guardrails", "bouncer": "bouncer"},
     )
     builder.add_edge("guardrails", "save_session")
-    builder.add_edge("bouncer", "save_session")
+    builder.add_edge("bouncer", "specialist_router")
+    builder.add_edge("specialist_router", "guardrails")
     builder.add_edge("save_session", END)
 
     return builder.compile()

@@ -52,7 +52,7 @@ class ConversationState(TypedDict, total=False):
     # -------------------------
     # Routing (Specialist Router)
     # -------------------------
-    specialist_route: Optional[Literal["card", "loan", "insurance", "fraud", "premium"]]
+    specialist_route: Optional[Literal["card", "loan", "insurance", "fraud", "premium", "general"]]
     route_reason: Optional[str]
     high_value_flag: bool
 
