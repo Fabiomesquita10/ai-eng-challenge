@@ -1,6 +1,8 @@
 """Workflow nodes."""
 
+from app.agents.bouncer import bouncer_agent
 from app.agents.greeter import greeter_agent as greeter_agent_impl
+from app.agents.guardrails import guardrails_agent
 from app.services import session_service
 
 

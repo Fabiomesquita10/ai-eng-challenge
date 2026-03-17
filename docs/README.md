@@ -17,6 +17,7 @@ This folder contains the technical architecture documentation for the AI-powered
 | [07 - API Contract](./07-API.md) | FastAPI endpoints, request/response models, status mapping |
 | [08 - Observability](./08-OBSERVABILITY.md) | LangSmith tracing setup |
 | [09 - Greeter Explained](./09-GREETER_EXPLAINED.md) | Greeter flow, decision logic, and all outcomes |
+| [10 - Bouncer Explained](./10-BOUNCER_EXPLAINED.md) | Bouncer flow, customer classification (premium/regular) |
 
 ---
 

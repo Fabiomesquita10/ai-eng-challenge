@@ -33,7 +33,7 @@ class TestChat:
             yield
 
     def test_chat_needs_more_info(self):
-        """First message: asks for identification."""
+        """First message: asks for identification -> guardrails path."""
         r = client.post("/chat", json={"session_id": "api-test-1", "message": "Hi, I lost my card"})
         assert r.status_code == 200
         data = r.json()
@@ -41,3 +41,50 @@ class TestChat:
         assert data["status"] == "needs_more_info"
         assert data["needs_more_info"] is True
         assert "response" in data
+        assert data.get("customer_type") is None  # Never reached bouncer
+
+    def test_chat_identified_premium(self):
+        """Identified premium customer -> bouncer path, returns customer_type=premium."""
+        with patch(
+            "app.agents.greeter.extract_identification",
+            return_value={"name": "Fabio Mesquita", "phone": "912345678", "iban": None},
+        ):
+            r = client.post(
+                "/chat",
+                json={"session_id": "api-test-premium", "message": "Hi, I am Fabio Mesquita, phone 912345678"},
+            )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "completed"
+        assert data["customer_type"] == "premium"
+        assert data["needs_more_info"] is False
+
+    def test_chat_identified_regular(self):
+        """Identified regular customer -> bouncer path, returns customer_type=regular."""
+        with patch(
+            "app.agents.greeter.extract_identification",
+            return_value={"name": "John Smith", "phone": "+44123456789", "iban": None},
+        ):
+            r = client.post(
+                "/chat",
+                json={"session_id": "api-test-regular", "message": "Hi, I'm John Smith, +44123456789"},
+            )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "completed"
+        assert data["customer_type"] == "regular"
+
+    def test_chat_identification_failed(self):
+        """Identification failed -> guardrails path, status=rejected."""
+        with patch(
+            "app.agents.greeter.extract_identification",
+            return_value={"name": "Unknown", "phone": "999999999", "iban": None},
+        ):
+            r = client.post(
+                "/chat",
+                json={"session_id": "api-test-failed", "message": "I'm Unknown, phone 999999999"},
+            )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["status"] == "rejected"
+        assert data.get("customer_type") is None
