@@ -1,13 +1,32 @@
 """Extract intent and identification data from user messages using LLM."""
 
 import json
-from typing import Dict, Optional, Tuple
+import re
+from typing import Any, Dict, Optional, Tuple
 
 from langchain_openai import ChatOpenAI
 
 from app.core.config import OPENAI_API_KEY, OPENAI_MODEL
 
 _llm: Optional[ChatOpenAI] = None
+
+
+def _parse_json_from_llm(content: str) -> Optional[Dict[str, Any]]:
+    """
+    Parse JSON from LLM response. Handles empty, markdown-wrapped, or malformed output.
+    Returns None if parsing fails.
+    """
+    if not content or not content.strip():
+        return None
+    text = content.strip()
+    # Extract from ```json ... ``` or ``` ... ```
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+    if match:
+        text = match.group(1).strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
 
 
 def _get_llm() -> ChatOpenAI:
@@ -41,19 +60,24 @@ def extract_intent(message: str, conversation_history: Optional[list] = None) ->
 
     prompt = f"""{context}Current user message: "{message}"
 
-Extract the user's intent. Choose one:
-- card: lost card, stolen card, block card, replacement, PIN
-- loan: loan, mortgage, credit application
-- insurance: insurance, policy, yacht, marine, coverage
-- fraud: fraud, suspicious transaction, dispute, unauthorized
+Extract the user's intent. Choose the MOST SPECIFIC match. If they mention a domain (card, loan, insurance, etc.), use that even if they also say "I need help" or "help me".
+
+- card: card issues — lost/stolen/block card, replacement, PIN, cartão, cartao, credit card, debit card
+- loan: loan, mortgage, credit application, empréstimo, crédito
+- insurance: insurance, policy, yacht, marine, coverage, seguro
+- fraud: fraud, suspicious transaction, dispute, unauthorized, fraude
 - premium: premium services, private banking, wealth management
-- general_support: general inquiry, account help, other
+- general_support: ONLY when no specific domain is mentioned — vague "I need help", "I have a question", account help, other
+
+Examples: "preciso de ajuda com o meu cartão" → card; "I need help with my card" → card; "help" (no domain) → general_support
 
 Respond with JSON only: {{"intent": "...", "confidence": 0.0-1.0}}"""
 
     response = llm.invoke(prompt)
     content = response.content if hasattr(response, "content") else str(response)
-    data = json.loads(content)
+    data = _parse_json_from_llm(content)
+    if data is None:
+        return ("general_support", 0.5)
     return (
         data.get("intent", "general_support"),
         float(data.get("confidence", 0.5)),
@@ -88,7 +112,9 @@ Return JSON only with null for missing fields: {{"name": null, "phone": null, "i
 
     response = llm.invoke(prompt)
     content = response.content if hasattr(response, "content") else str(response)
-    data = json.loads(content)
+    data = _parse_json_from_llm(content)
+    if data is None:
+        return {"name": None, "phone": None, "iban": None}
     return {
         "name": data.get("name") if data.get("name") else None,
         "phone": data.get("phone") if data.get("phone") else None,

@@ -243,6 +243,13 @@ pytest tests/ -v
 
 ## 🐳 Running the Project
 
+**Prerequisite:** Create a `.env` file with your OpenAI API key:
+
+```bash
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY=sk-your-actual-key
+```
+
 **Production:**
 ```bash
 docker compose up --build
@@ -259,6 +266,16 @@ Code changes in `app/` and `docs/` will trigger an automatic reload.
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
+
+### Insurance RAG (InsuranceQA-v2 + FAISS)
+
+The Insurance Specialist uses [InsuranceQA-v2](https://huggingface.co/datasets/deccan-ai/insuranceQA-v2) with **FAISS** for vector search. When running with Docker, the dataset (1000 docs) is loaded and the FAISS index is pre-built on container startup. For local development:
+
+```bash
+python scripts/load_insurance_qa.py --max-rows 2000
+```
+
+Options: `--max-rows 0` for all ~28k pairs; `--split validation` or `--split test`. The FAISS index is built on first Insurance query and cached in `app/data/faiss_insurance/`.
 
 ---
 

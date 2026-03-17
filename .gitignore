@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# RAG vector store
+**/chroma_insurance/
+**/faiss_insurance/
+
+# Generated InsuranceQA data (loaded on Docker startup)
+app/data/insurance/insurance_qa.md

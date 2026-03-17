@@ -152,33 +152,27 @@ User query + conversation context
          ↓
     Build query (intent / subcategory)
          ↓
-    Retrieve top-K chunks (embeddings or BM25)
+    [1. Hybrid Search] Dense + BM25 → ~120–150 candidates
+         ↓
+    [2. RRF] Reciprocal Rank Fusion → single ranked list
+         ↓
+    [3. Rerank] Cross-encoder → top 5–10 chunks
          ↓
     LLM prompt: retrieved chunks + query + context
          ↓
     Response (grounded in docs)
 ```
 
----
-
-### Retrieval Options
-
-| Approach | Complexity | When to use |
-|----------|-------------|-------------|
-| **BM25 / keyword** | Low | Small KB; simple matching |
-| **Embeddings + vector store** | Medium | Better semantic match ("my boat" → yacht) |
-| **FAISS / Chroma** | Medium | If you want to impress; scales |
-
-**Recommendation:** Start with embeddings + simple vector store. The KB is small; no need to overcomplicate.
+**Implementation:** See [12 - RAG Insurance Pipeline](./12-RAG_INSURANCE_PIPELINE.md) for the full three-stage hybrid + RRF + rerank approach (based on 2024–2025 benchmarks and production practices).
 
 ---
 
 ### Implementation Notes
 
 - **Location:** `app/agents/specialists/insurance.py` — uses RAG before generating response
-- **Service:** `app/services/insurance_rag_service.py` — load docs, chunk, embed, search
-- **Data:** `app/data/insurance/*.md`
-- **Dependencies:** `langchain`, `chromadb` or `faiss-cpu`, embedding model
+- **Retriever:** `app/rag/retriever.py` — Hybrid (FAISS + BM25) → RRF → Rerank
+- **Data:** `app/data/insurance/*.md` — loaded from InsuranceQA-v2 on Docker startup
+- **Dependencies:** `faiss-cpu`, `langchain-community`, `rank-bm25`, `sentence-transformers`, `datasets`
 
 ---
 

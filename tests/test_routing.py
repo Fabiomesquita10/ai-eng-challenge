@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.graph.routing import route_after_greeter
+from app.graph.routing import route_after_greeter, route_after_specialist_router
 
 
 class TestRouteAfterGreeter:
@@ -33,3 +33,17 @@ class TestRouteAfterGreeter:
             "is_identified": True,
             "needs_more_info": True,
         }) == "guardrails"
+
+
+class TestRouteAfterSpecialistRouter:
+    """Conditional routing to specialist nodes."""
+
+    def test_route_card(self):
+        assert route_after_specialist_router({"specialist_route": "card"}) == "card"
+
+    def test_route_insurance(self):
+        assert route_after_specialist_router({"specialist_route": "insurance"}) == "insurance"
+
+    def test_route_general_fallback(self):
+        assert route_after_specialist_router({"specialist_route": None}) == "general"
+        assert route_after_specialist_router({"specialist_route": "unknown"}) == "general"

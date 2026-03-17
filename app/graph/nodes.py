@@ -3,6 +3,7 @@
 from app.agents.bouncer import bouncer_agent
 from app.agents.greeter import greeter_agent as greeter_agent_impl
 from app.agents.guardrails import guardrails_agent
+from app.agents.specialists import card, fraud, general, insurance, loan, premium
 from app.agents.specialist_router import specialist_router_agent
 from app.services import session_service
 
@@ -38,6 +39,30 @@ def greeter_agent(state: dict) -> dict:
 def specialist_router(state: dict) -> dict:
     """Specialist Router: intent → specialist_route (rule-based)."""
     return specialist_router_agent(state)
+
+
+def card_specialist(state: dict) -> dict:
+    return card.run(state)
+
+
+def loan_specialist(state: dict) -> dict:
+    return loan.run(state)
+
+
+def insurance_specialist(state: dict) -> dict:
+    return insurance.run(state)
+
+
+def fraud_specialist(state: dict) -> dict:
+    return fraud.run(state)
+
+
+def premium_specialist(state: dict) -> dict:
+    return premium.run(state)
+
+
+def general_specialist(state: dict) -> dict:
+    return general.run(state)
 
 
 def save_session(state: dict) -> dict:

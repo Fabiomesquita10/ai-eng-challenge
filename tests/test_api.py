@@ -18,7 +18,7 @@ class TestHealth:
 
 
 class TestChat:
-    """Chat endpoint - mock extraction to avoid LLM calls."""
+    """Chat endpoint - mock extraction and specialists to avoid LLM calls."""
 
     @pytest.fixture(autouse=True)
     def mock_extraction(self):
@@ -30,6 +30,20 @@ class TestChat:
     @pytest.fixture(autouse=True)
     def mock_customers(self, test_customers):
         with patch("app.services.verification_service.get_customers", return_value=test_customers):
+            yield
+
+    @pytest.fixture(autouse=True)
+    def mock_specialists(self):
+        """Mock specialists to avoid LLM calls when flow reaches a specialist."""
+        mock_return = {"final_response": "Mock specialist response"}
+        with (
+            patch("app.agents.specialists.card.run", return_value=mock_return),
+            patch("app.agents.specialists.loan.run", return_value=mock_return),
+            patch("app.agents.specialists.insurance.run", return_value=mock_return),
+            patch("app.agents.specialists.fraud.run", return_value=mock_return),
+            patch("app.agents.specialists.premium.run", return_value=mock_return),
+            patch("app.agents.specialists.general.run", return_value=mock_return),
+        ):
             yield
 
     def test_chat_needs_more_info(self):
