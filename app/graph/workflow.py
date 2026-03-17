@@ -1,4 +1,4 @@
-"""LangGraph workflow with conditional routing after Greeter."""
+"""LangGraph workflow: input guardrails after user message, output guardrails before any response."""
 
 from langgraph.graph import END, START, StateGraph
 
@@ -8,24 +8,26 @@ from .nodes import (
     card_specialist,
     fraud_specialist,
     general_specialist,
-    guardrails_agent,
     greeter_agent,
+    input_guardrails,
     insurance_specialist,
     loan_specialist,
     load_session,
+    output_guardrails,
     premium_specialist,
     save_session,
     specialist_router,
 )
-from .routing import route_after_greeter, route_after_specialist_router
+from .routing import route_after_greeter, route_after_input_guardrails, route_after_specialist_router
 
 
 def _build_graph():
     builder = StateGraph(ConversationState)
 
     builder.add_node("load_session", load_session)
+    builder.add_node("input_guardrails", input_guardrails)
     builder.add_node("greeter_agent", greeter_agent)
-    builder.add_node("guardrails", guardrails_agent)
+    builder.add_node("output_guardrails", output_guardrails)
     builder.add_node("bouncer", bouncer_agent)
     builder.add_node("specialist_router", specialist_router)
     builder.add_node("card_specialist", card_specialist)
@@ -37,13 +39,18 @@ def _build_graph():
     builder.add_node("save_session", save_session)
 
     builder.add_edge(START, "load_session")
-    builder.add_edge("load_session", "greeter_agent")
+    builder.add_edge("load_session", "input_guardrails")
+    builder.add_conditional_edges(
+        "input_guardrails",
+        route_after_input_guardrails,
+        {"save_session": "save_session", "greeter_agent": "greeter_agent"},
+    )
     builder.add_conditional_edges(
         "greeter_agent",
         route_after_greeter,
-        {"guardrails": "guardrails", "bouncer": "bouncer"},
+        {"output_guardrails": "output_guardrails", "bouncer": "bouncer"},
     )
-    builder.add_edge("guardrails", "save_session")
+    builder.add_edge("output_guardrails", "save_session")
     builder.add_edge("bouncer", "specialist_router")
     builder.add_conditional_edges(
         "specialist_router",
@@ -58,7 +65,7 @@ def _build_graph():
         },
     )
     for specialist_node in ("card_specialist", "loan_specialist", "insurance_specialist", "fraud_specialist", "premium_specialist", "general_specialist"):
-        builder.add_edge(specialist_node, "guardrails")
+        builder.add_edge(specialist_node, "output_guardrails")
     builder.add_edge("save_session", END)
 
     return builder.compile()

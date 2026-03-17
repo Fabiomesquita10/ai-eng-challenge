@@ -134,7 +134,7 @@ When the flow goes through the Bouncer, the `/chat` response includes:
            ▼                             ▼
     ┌──────────────┐              ┌──────────────┐
     │  Guardrails  │              │   Bouncer    │
-    │  (pass-through)             │  customer_record.premium
+    │  (output checks)           │  customer_record.premium
     └──────┬───────┘              └──────┬───────┘
            │                             │
            │                    premium? │

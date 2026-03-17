@@ -20,6 +20,7 @@ This folder contains the technical architecture documentation for the AI-powered
 | [10 - Bouncer Explained](./10-BOUNCER_EXPLAINED.md) | Bouncer flow, customer classification (premium/regular) |
 | [11 - Specialist Router Explained](./11-SPECIALIST_ROUTER_EXPLAINED.md) | Rule-based intent → specialist_route mapping |
 | [12 - RAG Insurance Pipeline](./12-RAG_INSURANCE_PIPELINE.md) | Hybrid + RRF + Rerank — three-stage retrieval (2024–2025) |
+| [13 - Guardrails Explained](./13-GUARDRAILS_EXPLAINED.md) | Input/output checks, redaction, safe rewrite |
 
 ---
 
@@ -42,7 +43,7 @@ All of this should happen **seamlessly**, without the friction of traditional IV
 ## 🏗️ Quick Reference
 
 ```
-User Request → FastAPI (/chat) → Session Manager → Greeter → Bouncer → Specialist Router → Specialist → Guardrails → Response
+User Request → FastAPI (/chat) → Session Manager → Input Guardrails → Greeter → Bouncer → Specialist Router → Specialist → Output Guardrails → Response
 ```
 
 ---

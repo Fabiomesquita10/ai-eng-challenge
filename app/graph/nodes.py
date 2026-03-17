@@ -2,10 +2,20 @@
 
 from app.agents.bouncer import bouncer_agent
 from app.agents.greeter import greeter_agent as greeter_agent_impl
-from app.agents.guardrails import guardrails_agent
 from app.agents.specialists import card, fraud, general, insurance, loan, premium
 from app.agents.specialist_router import specialist_router_agent
+from app.guardrails.agent import input_guardrails_agent, output_guardrails_agent
 from app.services import session_service
+
+
+def input_guardrails(state: dict) -> dict:
+    """Input validation: right after user message."""
+    return input_guardrails_agent(state)
+
+
+def output_guardrails(state: dict) -> dict:
+    """Output validation: before any response (after greeter or specialist)."""
+    return output_guardrails_agent(state)
 
 
 def load_session(state: dict) -> dict:

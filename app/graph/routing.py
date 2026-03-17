@@ -5,13 +5,23 @@ from typing import Literal
 SpecialistRoute = Literal["card", "loan", "insurance", "fraud", "premium", "general"]
 
 
-def route_after_greeter(state: dict) -> Literal["guardrails", "bouncer"]:
+def route_after_input_guardrails(state: dict) -> Literal["save_session", "greeter_agent"]:
     """
-    After Greeter: needs_more_info or identification_failed → guardrails;
+    After input guardrails: if input blocked → save_session;
+    else → greeter.
+    """
+    if state.get("guardrail_flagged") and state.get("final_response"):
+        return "save_session"
+    return "greeter_agent"
+
+
+def route_after_greeter(state: dict) -> Literal["output_guardrails", "bouncer"]:
+    """
+    After Greeter: needs_more_info or identification_failed → output_guardrails;
     is_identified → bouncer.
     """
     if state.get("needs_more_info") or state.get("identification_failed"):
-        return "guardrails"
+        return "output_guardrails"
     return "bouncer"
 
 

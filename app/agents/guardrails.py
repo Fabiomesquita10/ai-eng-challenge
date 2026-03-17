@@ -1,10 +1,3 @@
-"""Guardrails: safety and compliance layer. Pass-through for now."""
+"""Guardrails: safety and compliance layer. Delegates to app.guardrails."""
 
-
-def guardrails_agent(state: dict) -> dict:
-    """
-    Validate input/output and enforce policies.
-    Currently pass-through: returns state unchanged.
-    TODO: Add validation, blocklist, policy checks.
-    """
-    return {}
+from app.guardrails import guardrails_agent

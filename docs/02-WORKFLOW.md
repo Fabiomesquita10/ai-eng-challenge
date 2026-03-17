@@ -13,33 +13,36 @@ START
 load_session
   │
   ▼
-greeter_agent
+input_guardrails (right after user message)
   │
-  ├── needs_more_info ──────► guardrails ──► save_session ──► END
+  ├── input blocked ────────► save_session ──► END
   │
-  ├── identification_failed ─► guardrails ──► save_session ──► END
-  │
-  └── is_identified ────────► bouncer_agent
+  └── OK ───────────────────► greeter_agent
                                 │
-                                ├── not_customer ──► guardrails ──► save_session ──► END
+                                ├── needs_more_info ──────► output_guardrails ──► save_session ──► END
                                 │
-                                └── regular/premium ─► specialist_router_agent
-                                                        │   (rules + prompt + LLM fallback)
-                                                        │
-                                                        ├── card ──────► card_specialist
-                                                        ├── loan ──────► loan_specialist
-                                                        ├── insurance ─► insurance_specialist (RAG)
-                                                        ├── fraud ─────► fraud_specialist
-                                                        └── premium ───► premium_specialist
-                                                                          │
-                                                                          ▼
-                                                                     guardrails
-                                                                          │
-                                                                          ▼
-                                                                     save_session
-                                                                          │
-                                                                          ▼
-                                                                         END
+                                ├── identification_failed ─► output_guardrails ──► save_session ──► END
+                                │
+                                └── is_identified ────────► bouncer_agent
+                                                              │
+                                                              ▼
+                                                         specialist_router_agent
+                                                              │   (rules + prompt + LLM fallback)
+                                                              │
+                                                              ├── card ──────► card_specialist
+                                                              ├── loan ──────► loan_specialist
+                                                              ├── insurance ─► insurance_specialist (RAG)
+                                                              ├── fraud ─────► fraud_specialist
+                                                              └── premium ───► premium_specialist
+                                                                                │
+                                                                                ▼
+                                                                           output_guardrails
+                                                                                │
+                                                                                ▼
+                                                                           save_session
+                                                                                │
+                                                                                ▼
+                                                                               END
 ```
 
 ---
@@ -48,17 +51,19 @@ greeter_agent
 
 | From | Condition | To |
 |------|-----------|-----|
-| Greeter | `needs_more_info == True` | Guardrails → End |
-| Greeter | `identification_failed == True` | Guardrails → End |
+| load_session | (always) | input_guardrails |
+| input_guardrails | `guardrail_flagged == True` | save_session → End |
+| input_guardrails | OK | Greeter |
+| Greeter | `needs_more_info == True` | output_guardrails → End |
+| Greeter | `identification_failed == True` | output_guardrails → End |
 | Greeter | `is_identified == True` | Bouncer |
-| Bouncer | `customer_type == "not_customer"` | Guardrails → End |
-| Bouncer | `customer_type in ["regular", "premium"]` | Specialist Router |
+| Bouncer | (always) | Specialist Router |
 | Specialist Router | `specialist_route == "card"` | Card Specialist |
 | Specialist Router | `specialist_route == "loan"` | Loan Specialist |
 | Specialist Router | `specialist_route == "insurance"` | Insurance Specialist |
 | Specialist Router | `specialist_route == "fraud"` | Fraud Specialist |
 | Specialist Router | `specialist_route == "premium"` | Premium Specialist |
-| Any Specialist | (always) | Guardrails → Save Session → End |
+| Any Specialist | (always) | output_guardrails → Save Session → End |
 
 ---
 
@@ -66,11 +71,11 @@ greeter_agent
 
 The workflow can terminate early in these cases:
 
-1. **Needs more info:** Greeter cannot verify identity; user must provide additional data (e.g., phone or IBAN).
-2. **Identification failed:** User provided data but it does not match any customer (2/3 rule not satisfied).
-3. **Not a customer:** Bouncer determines the user is not a customer; request cannot proceed.
+1. **Input blocked:** input_guardrails flags dangerous user message → fallback response, skip processing.
+2. **Needs more info:** Greeter cannot verify identity; user must provide additional data (e.g., phone or IBAN).
+3. **Identification failed:** User provided data but it does not match any customer (2/3 rule not satisfied).
 
-In all early-exit cases, the **Guardrails** layer still processes the response to ensure it is safe and compliant before returning to the user.
+In all cases, **output_guardrails** processes the response before it reaches the user. **input_guardrails** runs right after the user message to block dangerous requests before any processing.
 
 ---
 

@@ -46,6 +46,18 @@ class TestChat:
         ):
             yield
 
+    @pytest.fixture(autouse=True)
+    def mock_guardrails(self):
+        """Mock guardrails to pass through (avoid LLM calls in API flow tests)."""
+        with (
+            patch("app.guardrails.agent.check_input", return_value=(False, None)),
+            patch(
+                "app.guardrails.agent.check_output",
+                side_effect=lambda r, u: (r, False, None),
+            ),
+        ):
+            yield
+
     def test_chat_needs_more_info(self):
         """First message: asks for identification -> guardrails path."""
         r = client.post("/chat", json={"session_id": "api-test-1", "message": "Hi, I lost my card"})
