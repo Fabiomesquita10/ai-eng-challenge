@@ -24,11 +24,11 @@ greeter_agent
                                 ├── not_customer ──► guardrails ──► save_session ──► END
                                 │
                                 └── regular/premium ─► specialist_router_agent
-                                                        │   (RAG retrieval over departments KB)
+                                                        │   (rules + prompt + LLM fallback)
                                                         │
                                                         ├── card ──────► card_specialist
                                                         ├── loan ──────► loan_specialist
-                                                        ├── insurance ─► insurance_specialist
+                                                        ├── insurance ─► insurance_specialist (RAG)
                                                         ├── fraud ─────► fraud_specialist
                                                         └── premium ───► premium_specialist
                                                                           │

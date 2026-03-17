@@ -1,6 +1,6 @@
 # 🎓 Model Configuration & RAG Strategy
 
-This document describes how each agent is configured (prompts, models, tools) and the RAG strategy for the **Specialist Router Agent**.
+This document describes how each agent is configured (prompts, models, tools) and the RAG strategy for the **Insurance Specialist Agent**.
 
 ---
 
@@ -10,7 +10,7 @@ The system uses **pre-trained LLMs** with task-specific prompts rather than fine
 
 - **Prompt engineering** — designing system and user prompts per agent
 - **Model selection** — choosing the right model (and temperature) per task
-- **RAG setup** — for the Specialist Router to ground routing decisions in structured knowledge
+- **RAG setup** — for the Insurance Specialist to ground responses in insurance documentation
 - **Evaluation & iteration** — improving prompts and retrieval over time
 
 ---
@@ -21,8 +21,8 @@ The system uses **pre-trained LLMs** with task-specific prompts rather than fine
 |-------|------------|--------------|----------------------|
 | **Greeter** | Yes | Intent + entity extraction | Structured output (JSON) for extraction; low temperature |
 | **Bouncer** | Optional | Classification | Prefer rule-based; LLM only if classification rules are complex |
-| **Specialist Router** | Yes | Routing (RAG-backed) | RAG retrieval + LLM; grounds decisions in departments knowledge base |
-| **Specialists** | Yes | Response generation | Domain prompts |
+| **Specialist Router** | Optional | Routing | Rule-first + prompt engineering + few-shot examples; LLM fallback for ambiguous intents |
+| **Specialists** | Yes | Response generation | Domain prompts; **Insurance uses RAG** |
 | **Guardrails** | Optional | Validation | Rule-based + optional LLM for content safety |
 
 ---
@@ -51,118 +51,18 @@ The system uses **pre-trained LLMs** with task-specific prompts rather than fine
 
 ---
 
-## Specialist Router Agent (RAG-backed)
+## Specialist Router Agent
 
-**Tasks:** Map intent → specialist route, using a knowledge base to ground decisions.
+**Tasks:** Map intent → specialist route.
 
 **Configuration:**
 
-- **Model:** Capable model for reasoning over retrieved context
-- **Temperature:** 0.0–0.3 — consistent routing
-- **RAG:** Retrieval over `departments.json` (or `knowledge_base.json`) before routing decision
+- **Model:** Optional — rule-first with LLM fallback for ambiguous cases
+- **Approach:** Rules + prompt engineering + few-shot examples. **No RAG** — with a handful of well-defined routes, retrieval would feel forced.
+- **Inputs:** `intent`, `customer_type`, `high_value` flag
 - **Output:** Single enum: `card | loan | insurance | fraud | premium`
 
----
-
-## 🧠 RAG Strategy: Specialist Router
-
-### Why RAG for Routing?
-
-A **lightweight RAG layer** is used by the Specialist Router Agent to **ground routing decisions** in a structured knowledge base of banking departments, supported request types, and high-value services.
-
-This approach:
-
-- **Avoids relying purely on free-form LLM reasoning** — routing is informed by explicit department definitions
-- **Improves consistency** — same or similar intents map to the same specialist
-- **Handles edge cases** — e.g., "yacht insurance" → specialty_insurance via topic match
-- **Single, focused RAG point** — simpler than RAG in multiple specialists
-
----
-
-### Knowledge Base Structure
-
-Keep it simple. Use `departments.json` (or `knowledge_base.json`) with structured documents:
-
-```json
-[
-  {
-    "department": "card_support",
-    "topics": ["lost card", "stolen card", "blocked card", "replacement", "PIN reset"],
-    "premium_supported": true,
-    "description": "Handles debit and credit card operational issues."
-  },
-  {
-    "department": "loan",
-    "topics": ["loan application", "mortgage", "credit", "interest rates", "refinancing"],
-    "premium_supported": true,
-    "description": "Handles loan and mortgage requests."
-  },
-  {
-    "department": "specialty_insurance",
-    "topics": ["yacht insurance", "marine insurance", "high-value assets", "boat insurance"],
-    "premium_supported": true,
-    "description": "Handles specialized insurance requests for high-value assets."
-  },
-  {
-    "department": "fraud",
-    "topics": ["suspicious transaction", "dispute", "unauthorized charge", "fraud alert"],
-    "premium_supported": true,
-    "description": "Handles fraud detection and dispute resolution."
-  },
-  {
-    "department": "premium",
-    "topics": ["wealth management", "concierge", "premium services", "VIP"],
-    "premium_supported": true,
-    "description": "Handles high-value and premium customer services."
-  }
-]
-```
-
-**Fields:**
-
-| Field | Purpose |
-|-------|---------|
-| `department` | Maps to specialist route |
-| `topics` | Keywords/phrases for retrieval (BM25 or embedding match) |
-| `premium_supported` | Eligibility for premium customers |
-| `description` | Semantic context for embeddings |
-
----
-
-### Retrieval Options
-
-| Approach | Complexity | When to use |
-|----------|-------------|-------------|
-| **BM25 / keyword** | Low | Keep it lightweight; small knowledge base |
-| **Embeddings + vector store** | Medium | Better semantic match (e.g., "my boat" → yacht) |
-| **FAISS / Chroma** | Medium | If you want to impress; scales to larger KB |
-
-**Recommendation:** Start with **BM25 or simple keyword matching** over `topics` and `description`. Add embeddings (e.g., `text-embedding-3-small`) if you need better semantic recall.
-
----
-
-### RAG Flow for Specialist Router
-
-```
-User intent + customer_type
-         ↓
-    Build query (intent + context)
-         ↓
-    Retrieve top-K departments (BM25 or vector search)
-         ↓
-    LLM prompt: retrieved departments + intent + customer_type
-         ↓
-    specialist_route (grounded in KB)
-```
-
----
-
-### Implementation Notes
-
-- **Location:** `app/agents/specialist_router.py` or `app/services/routing_service.py`
-- **Data:** `app/data/departments.json`
-- **Retrieval:** `app/services/routing_service.py` — load KB, search, return matched departments
-- **Dependencies (if embeddings):** `langchain`, `chromadb` or `faiss-cpu`, embedding model
+**Routing config:** `departments.json` — used for rule-based keyword/topic matching, not vector retrieval.
 
 ---
 
@@ -176,7 +76,109 @@ User intent + customer_type
 - **Temperature:** 0.3–0.5 — natural, varied responses
 - **Prompt design:** Role-specific system prompt; conversation context and customer type
 
-**Note:** Specialists do not use RAG. Only the Specialist Router does.
+**Special case:** Insurance Specialist uses **RAG** (see below).
+
+---
+
+## 🧠 RAG Strategy: Insurance Specialist
+
+### Why RAG for Insurance (and not for Routing)?
+
+**Routing** with a handful of well-defined routes is better solved with:
+
+- Rules
+- Prompt engineering
+- Few-shot examples
+- Rule-first + LLM fallback
+
+Using RAG for routing can feel like "I used it just because."
+
+**Insurance Specialist** is different. Here you're not just deciding where to route — you're **giving a more informed response** based on specific knowledge. RAG adds real value:
+
+- User asks something specific (e.g., "yacht insurance policy")
+- Router sends to Insurance Specialist
+- Insurance Specialist **retrieves** from a knowledge base
+- Response is **grounded** in actual documentation
+
+This demonstrates retrieval-augmented reasoning where it genuinely improves the solution.
+
+---
+
+### README Pitch
+
+> A lightweight RAG component is used inside the Insurance Specialist Agent to ground responses on a small internal knowledge base of insurance products, specialty coverage areas, and routing policies. This demonstrates retrieval-augmented reasoning where it adds real value, rather than using retrieval for simple routing decisions.
+
+---
+
+### Example Flow
+
+**User:** "I need help with my yacht insurance policy"
+
+1. Greeter → identifies customer
+2. Bouncer → premium
+3. Specialist Router → `insurance_specialist_agent` (no RAG)
+4. **Insurance Specialist:**
+   - Retrieves from insurance KB
+   - Finds docs on: marine insurance, high-value asset insurance, specialty insurance handling
+   - Responds: *"This request falls under our specialty insurance support team. Our marine and high-value asset coverage team handles yacht insurance policies. I'll connect you with the appropriate specialist..."*
+
+---
+
+### Knowledge Base Structure
+
+Keep it simple. A small set of markdown files:
+
+| File | Content |
+|------|---------|
+| `insurance_products.md` | Supported insurance types, product overview |
+| `specialty_insurance.md` | Marine, yacht, high-value assets, specialty coverage |
+| `premium_insurance_routing.md` | Premium escalation, teams responsible, routing policies |
+
+**Location:** `app/data/insurance/`
+
+**Content examples:**
+
+- Types of insurance supported (car, home, marine, specialty)
+- Specialty requests (yacht, boat, high-value assets)
+- Responsible teams and escalation paths
+- Premium customer handling
+
+---
+
+### RAG Flow for Insurance Specialist
+
+```
+User query + conversation context
+         ↓
+    Build query (intent / subcategory)
+         ↓
+    Retrieve top-K chunks (embeddings or BM25)
+         ↓
+    LLM prompt: retrieved chunks + query + context
+         ↓
+    Response (grounded in docs)
+```
+
+---
+
+### Retrieval Options
+
+| Approach | Complexity | When to use |
+|----------|-------------|-------------|
+| **BM25 / keyword** | Low | Small KB; simple matching |
+| **Embeddings + vector store** | Medium | Better semantic match ("my boat" → yacht) |
+| **FAISS / Chroma** | Medium | If you want to impress; scales |
+
+**Recommendation:** Start with embeddings + simple vector store. The KB is small; no need to overcomplicate.
+
+---
+
+### Implementation Notes
+
+- **Location:** `app/agents/specialists/insurance.py` — uses RAG before generating response
+- **Service:** `app/services/insurance_rag_service.py` — load docs, chunk, embed, search
+- **Data:** `app/data/insurance/*.md`
+- **Dependencies:** `langchain`, `chromadb` or `faiss-cpu`, embedding model
 
 ---
 
@@ -197,8 +199,9 @@ User intent + customer_type
 |-------|-----------------|----------------|
 | Greeter | Extraction accuracy (intent, entities) | Add few-shot examples; refine schema |
 | Bouncer | Classification accuracy | Tighten rules; add edge cases |
-| **Router** | **Routing accuracy; RAG recall** | **Expand topics in departments.json; tune retrieval** |
-| Specialists | Response quality, relevance | Improve prompts |
+| Router | Routing accuracy | Expand rules; add few-shot examples |
+| **Insurance Specialist** | **Response quality; RAG recall** | **Add docs to KB; tune retrieval; improve prompts** |
+| Other Specialists | Response quality | Improve prompts |
 | Guardrails | False positives/negatives | Adjust blocklist; refine policy prompts |
 
 ---
@@ -209,9 +212,21 @@ User intent + customer_type
 |-------|--------------|------|
 | Greeter | Structured extraction, low temp | No |
 | Bouncer | Rule-based preferred | No |
-| **Specialist Router** | **RAG-backed routing; departments KB** | **Yes** |
-| Specialists | Domain prompts | No |
+| Specialist Router | Rule-first + prompt + LLM fallback | No |
+| Card, Loan, Fraud, Premium | Domain prompts | No |
+| **Insurance Specialist** | **Domain prompts + RAG** | **Yes** |
 | Guardrails | Rule-based validation | No |
+
+---
+
+## Design Maturity
+
+This architecture shows **maturity**:
+
+- Not everything needs RAG
+- Not everything needs embeddings
+- RAG is used where it **genuinely improves** the solution
+- Better than spreading RAG across the system just to impress
 
 ---
 

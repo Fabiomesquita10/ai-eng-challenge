@@ -37,10 +37,10 @@ The system is built around a **LangGraph-based orchestration layer**, where each
 ### High-Level Flow
 
 ```
-User → FastAPI → Greeter → Bouncer → Specialist Router (RAG) → Specialist → Guardrails → Response
+User → FastAPI → Greeter → Bouncer → Specialist Router → Specialist → Guardrails → Response
 ```
 
-A **lightweight RAG layer** is used by the Specialist Router Agent to ground routing decisions in a structured knowledge base of banking departments, supported request types, and high-value services. This avoids relying purely on free-form LLM reasoning and improves consistency in request routing.
+A **lightweight RAG component** is used inside the **Insurance Specialist Agent** to ground responses on a small internal knowledge base of insurance products, specialty coverage areas, and routing policies. This demonstrates retrieval-augmented reasoning where it adds real value, rather than using retrieval for simple routing decisions.
 
 ### Agents
 
@@ -62,12 +62,12 @@ A **lightweight RAG layer** is used by the Specialist Router Agent to ground rou
 
 #### 📞 Specialist Router Agent
 
-* Uses **RAG** over a departments/services knowledge base to ground routing decisions
+* Rule-first + prompt engineering + LLM fallback (no RAG — rules suffice for routing)
 * Determines the correct domain expert based on:
 
   * User intent
   * Customer type
-  * Retrieved department knowledge (topics, supported request types)
+  * High-value flag
 
 #### 🎯 Specialist Agents
 
@@ -75,7 +75,7 @@ Dedicated agents for handling specific domains:
 
 * Card Support
 * Loans
-* Insurance
+* **Insurance** *(uses RAG over insurance knowledge base for grounded responses)*
 * Fraud
 * Premium Services
 
@@ -265,7 +265,7 @@ uvicorn app.main:app --reload
 * Separated agents by responsibility to reflect real-world systems
 * Avoided overusing LLMs in deterministic logic
 * Implemented session-based memory for multi-turn interactions
-* **RAG in Specialist Router** — grounds routing in a structured knowledge base (`departments.json`) instead of free-form LLM reasoning
+* **RAG in Insurance Specialist** — grounds responses in an internal knowledge base of insurance products and specialty coverage, where retrieval adds real value (rather than using RAG for simple routing)
 
 ---
 

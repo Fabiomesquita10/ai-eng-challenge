@@ -57,22 +57,22 @@ Each agent has a **single, well-defined role** within the system. This document 
 | Task | Description |
 |------|-------------|
 | Map intent to domain | Translate user intent into a specialist route (card, loan, insurance, fraud, premium) |
-| **RAG retrieval** | Query the departments/services knowledge base to ground routing in structured data (topics, supported request types, premium eligibility) |
-| Detect high-value requests | Identify special cases (e.g., yacht insurance, wealth management) using retrieved context |
-| Route to correct specialist | Select the appropriate specialist agent based on intent, customer type, and retrieved knowledge |
+| Detect high-value requests | Identify special cases (e.g., yacht insurance, wealth management) via `high_value` flag |
+| Route to correct specialist | Select the appropriate specialist agent based on intent and customer type |
 
 **Outputs (state updates):**
 
 - `specialist_route` ("card" | "loan" | "insurance" | "fraud" | "premium")
+- `high_value` (boolean, optional)
+
+**Approach:** Rule-first + prompt engineering + few-shot examples. LLM fallback for ambiguous intents. **No RAG** — with a handful of well-defined routes, rules and prompts suffice.
 
 **Example mappings:**
 
 - "Lost my card" → Card Specialist
-- "Yacht insurance" → Specialty Insurance (via RAG topic match)
+- "Yacht insurance" → Insurance Specialist
 - Premium customer + wealth request → Premium Specialist
 - "Suspicious transaction" → Fraud Specialist
-
-**RAG:** Uses a lightweight retrieval layer over `departments.json` (or similar) — embeddings/BM25 — to avoid relying purely on free-form LLM reasoning and improve routing consistency.
 
 ---
 
@@ -82,13 +82,15 @@ Each agent has a **single, well-defined role** within the system. This document 
 
 Each specialist handles requests within its domain and generates appropriate responses.
 
-| Specialist | Domain | Example intents |
-|------------|--------|-----------------|
-| **Card Specialist** | Card issues, blocking, replacement | Lost card, stolen card, PIN reset |
-| **Loan Specialist** | Loans, mortgages, credit | Loan application, interest rates |
-| **Insurance Specialist** | Insurance products | Car insurance, yacht insurance, claims |
-| **Fraud Specialist** | Fraud detection, disputes | Suspicious transactions, dispute a charge |
-| **Premium Specialist** | High-value, VIP services | Wealth management, concierge, premium products |
+| Specialist | Domain | Example intents | RAG? |
+|------------|--------|-----------------|------|
+| **Card Specialist** | Card issues, blocking, replacement | Lost card, stolen card, PIN reset | No |
+| **Loan Specialist** | Loans, mortgages, credit | Loan application, interest rates | No |
+| **Insurance Specialist** | Insurance products | Car insurance, yacht insurance, claims | **Yes** |
+| **Fraud Specialist** | Fraud detection, disputes | Suspicious transactions, dispute a charge | No |
+| **Premium Specialist** | High-value, VIP services | Wealth management, concierge, premium products | No |
+
+**Insurance Specialist RAG:** Retrieves from an internal knowledge base (insurance products, specialty coverage, routing policies) to ground responses. Example: "I need help with my yacht insurance policy" → retrieval finds marine/specialty insurance docs → response is grounded in actual documentation.
 
 **Outputs (state updates):**
 
@@ -124,7 +126,7 @@ Each specialist handles requests within its domain and generates appropriate res
 |-------|------------------------|-----------|
 | Greeter | Identification & intent extraction | Yes (extraction) |
 | Bouncer | Customer classification | Optional (can be rule-based) |
-| Specialist Router | Routing decision (RAG-backed) | Yes (LLM + RAG retrieval) |
+| Specialist Router | Routing decision | Rule-based + optional LLM fallback |
 | Specialists | Domain handling & response generation | Yes |
 | Guardrails | Safety & compliance | Optional (validation logic) |
 

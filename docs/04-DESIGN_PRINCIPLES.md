@@ -72,7 +72,18 @@ This hybrid approach ensures:
 
 ---
 
-## 5. Extensibility
+## 5. RAG Where It Adds Value
+
+**RAG is used only where retrieval genuinely improves the solution.**
+
+- **Routing:** Rule-first + prompt engineering suffice. RAG for routing would feel forced.
+- **Insurance Specialist:** RAG grounds responses in product docs, specialty coverage, routing policies. Here retrieval adds real value — more informed, credible responses.
+
+This shows maturity: not everything needs RAG; use it where it matters.
+
+---
+
+## 6. Extensibility
 
 **New agents or specialists can be added easily.**
 
@@ -84,7 +95,7 @@ The architecture does not require refactoring existing agents when extending the
 
 ---
 
-## 6. Testability
+## 7. Testability
 
 **Key logic is unit-testable.**
 
@@ -104,6 +115,7 @@ Integration tests can exercise full flows without relying on LLM calls (using mo
 | State-driven orchestration | Shared state; LangGraph controls flow |
 | Deterministic core logic | Rules for verification, classification, routing |
 | Selective LLM use | LLMs for extraction and generation; rules for decisions |
+| RAG where it adds value | Insurance Specialist only; not for routing |
 | Extensibility | Modular agents; easy to add specialists |
 | Testability | Unit tests for services; mock LLMs in integration tests |
 

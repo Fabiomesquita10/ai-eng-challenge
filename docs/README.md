@@ -13,7 +13,7 @@ This folder contains the technical architecture documentation for the AI-powered
 | [03 - Agent Responsibilities](./03-AGENTS.md) | Detailed responsibilities of each agent |
 | [04 - Design Principles](./04-DESIGN_PRINCIPLES.md) | Core design decisions and engineering philosophy |
 | [05 - Why LangGraph](./05-WHY_LANGGRAPH.md) | Rationale for using LangGraph as the orchestration framework |
-| [06 - Model Configuration & RAG](./06-MODEL_TRAINING_AND_RAG.md) | Model setup per agent, prompt design, and RAG strategy (Specialist Router) |
+| [06 - Model Configuration & RAG](./06-MODEL_TRAINING_AND_RAG.md) | Model setup per agent, prompt design, and RAG strategy (Insurance Specialist) |
 
 ---
 

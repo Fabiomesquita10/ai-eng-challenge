@@ -19,10 +19,10 @@ Greeter Agent (Identification & Intent)
      ↓
 Bouncer Agent (Customer Classification)
      ↓
-Specialist Router Agent
-   └─ RAG Retrieval over departments / services knowledge base
+Specialist Router Agent (rules + prompt + LLM fallback)
      ↓
 Specialist Agent (Domain Handling)
+   └─ Insurance Specialist: RAG over insurance knowledge base
      ↓
 Guardrails (Safety & Compliance)
      ↓
@@ -39,8 +39,8 @@ Response
 | **Session Manager** | Persists conversation history; enables multi-turn context |
 | **Greeter Agent** | Extracts intent and identification data; verifies customer legitimacy |
 | **Bouncer Agent** | Classifies customer type (regular, premium, not a customer) |
-| **Specialist Router** | Maps intent to domain; uses RAG over departments knowledge base to ground routing decisions; selects the correct specialist |
-| **Specialist Agent** | Handles domain-specific logic (card, loan, insurance, fraud, premium) |
+| **Specialist Router** | Maps intent to domain; rule-first + LLM fallback; selects the correct specialist |
+| **Specialist Agent** | Handles domain-specific logic; **Insurance Specialist** uses RAG over insurance knowledge base for grounded responses |
 | **Guardrails** | Validates input/output; enforces policies; prevents unsafe behavior |
 
 ---
@@ -51,8 +51,8 @@ Response
 2. **Session Manager** loads or creates a session; merges with conversation history.
 3. **Greeter** extracts intent and identification fields; verifies using the 2-out-of-3 rule.
 4. **Bouncer** determines customer type and eligibility.
-5. **Specialist Router** retrieves relevant department/service info via RAG, then selects the appropriate specialist based on intent, customer type, and retrieved knowledge.
-6. **Specialist** processes the request and generates a domain-specific response.
+5. **Specialist Router** selects the appropriate specialist based on intent, customer type, and high-value flag (rules + prompt engineering + LLM fallback).
+6. **Specialist** processes the request; **Insurance Specialist** uses RAG to retrieve relevant docs and generate grounded responses.
 7. **Guardrails** validate the response before it is returned.
 8. **Session Manager** saves the updated state.
 9. **Response** is returned to the user.
@@ -64,7 +64,7 @@ Response
 - **State-driven orchestration:** All routing is based on shared state, not direct agent-to-agent calls.
 - **Deterministic core logic:** Verification, classification, and routing use rule-based logic where possible.
 - **Selective LLM use:** LLMs are used for interpretation and natural language generation, not for critical business logic.
-- **RAG for routing:** A lightweight RAG layer grounds the Specialist Router's decisions in a structured knowledge base of banking departments and supported request types.
+- **RAG where it adds value:** A lightweight RAG component is used inside the Insurance Specialist to ground responses on an internal knowledge base of insurance products, specialty coverage, and routing policies — rather than using retrieval for simple routing decisions.
 - **Layered design:** Each layer has a single, well-defined responsibility.
 
 ---
