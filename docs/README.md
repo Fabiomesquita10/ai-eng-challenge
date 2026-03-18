@@ -8,6 +8,7 @@ This folder contains the technical architecture documentation for the AI-powered
 
 | Document | Description |
 |----------|-------------|
+| [00 - Architecture Diagram](./00-ARCHITECTURE_DIAGRAM.md) | Mermaid diagrams: system flow, routing, early exits |
 | [01 - System Architecture](./01-ARCHITECTURE.md) | High-level system overview and component flow |
 | [02 - Orchestration Workflow](./02-WORKFLOW.md) | LangGraph flow, routing logic, and state transitions |
 | [03 - Agent Responsibilities](./03-AGENTS.md) | Detailed responsibilities of each agent |

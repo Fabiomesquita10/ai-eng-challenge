@@ -57,3 +57,10 @@ class TestVerifyLegitimacy:
         """Name matching should be case-insensitive."""
         ok, record = verify_legitimacy({"name": "fabio mesquita", "phone": "912345678", "iban": None})
         assert ok is True
+
+    def test_record_includes_secret_and_answer(self):
+        """Verified record includes secret/answer when present."""
+        ok, record = verify_legitimacy({"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"})
+        assert ok is True
+        assert record.get("secret") == "Which is the name of my dog?"
+        assert record.get("answer") == "Yoda"

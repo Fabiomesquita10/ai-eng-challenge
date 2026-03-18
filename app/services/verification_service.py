@@ -69,6 +69,8 @@ def verify_legitimacy(
                 "phone": customer.get("phone"),
                 "iban": customer.get("iban"),
                 "premium": customer.get("premium", False),
+                "secret": customer.get("secret"),
+                "answer": customer.get("answer"),
             }
             return True, record
 

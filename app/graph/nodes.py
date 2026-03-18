@@ -38,6 +38,8 @@ def load_session(state: dict) -> dict:
         "collected_data": persisted.get("collected_data", {}),
         "customer_type": persisted.get("customer_type"),
         "specialist_route": persisted.get("specialist_route"),
+        "customer_record": persisted.get("customer_record"),
+        "secret_question": persisted.get("secret_question"),
     }
 
 

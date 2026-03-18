@@ -43,6 +43,9 @@ class ConversationState(TypedDict, total=False):
     # Dados do cliente (se encontrado)
     customer_record: Optional[Dict]
 
+    # Secret question (após 2/3 match, antes de is_identified)
+    secret_question: Optional[str]
+
     # -------------------------
     # Customer classification (Bouncer)
     # -------------------------

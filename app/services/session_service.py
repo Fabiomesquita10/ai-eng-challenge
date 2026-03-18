@@ -18,6 +18,8 @@ def save(session_id: str, state: dict[str, Any]) -> None:
         "collected_data": state.get("collected_data", {}),
         "customer_type": state.get("customer_type"),
         "specialist_route": state.get("specialist_route"),
+        "customer_record": state.get("customer_record"),
+        "secret_question": state.get("secret_question"),
     }
 
 
