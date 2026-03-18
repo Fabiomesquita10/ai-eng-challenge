@@ -1,4 +1,4 @@
-"""Greeter agent: extraction, merge, verification, response."""
+"""Greeter agent: extraction, merge, verification, secret question, response."""
 
 
 from app.services.verification_service import verify_legitimacy
@@ -7,10 +7,20 @@ from app.tools.response_builder import (
     build_followup_response,
     build_identification_failure_response,
     build_identified_response,
+    build_secret_question_response,
     compute_missing_fields,
     has_minimum_identification_data,
     merge_collected_data,
 )
+
+
+def _verify_secret_answer(user_message: str, expected_answer: str) -> bool:
+    """Check if user's message matches the expected secret answer (normalized)."""
+    if not expected_answer:
+        return True
+    msg = (user_message or "").strip().lower()
+    ans = (expected_answer or "").strip().lower()
+    return ans in msg or msg == ans
 
 
 def greeter_agent(state: dict) -> dict:
@@ -48,10 +58,59 @@ def greeter_agent(state: dict) -> dict:
             "final_response": response,
         }
 
-    # 6. Verify against customer base (2/3 rule)
+    # 6. If we asked secret question last turn, verify the answer now
+    customer_record_pending = state.get("customer_record")
+    secret_question_pending = state.get("secret_question")
+    if customer_record_pending and secret_question_pending:
+        expected = customer_record_pending.get("answer")
+        if _verify_secret_answer(user_message, expected):
+            response = build_identified_response(collected_data.get("name"))
+            return {
+                "intent": intent,
+                "intent_confidence": intent_confidence,
+                "collected_data": collected_data,
+                "missing_fields": missing_fields,
+                "needs_more_info": False,
+                "is_identified": True,
+                "identification_failed": False,
+                "customer_record": customer_record_pending,
+                "secret_question": None,
+                "final_response": response,
+            }
+        response = build_identification_failure_response()
+        return {
+            "intent": intent,
+            "intent_confidence": intent_confidence,
+            "collected_data": collected_data,
+            "missing_fields": missing_fields,
+            "needs_more_info": False,
+            "is_identified": False,
+            "identification_failed": True,
+            "customer_record": None,
+            "secret_question": None,
+            "final_response": response,
+        }
+
+    # 7. Verify against customer base (2/3 rule)
     is_verified, customer_record = verify_legitimacy(collected_data)
 
     if is_verified and customer_record:
+        secret = customer_record.get("secret")
+        answer = customer_record.get("answer")
+        if secret and answer:
+            response = build_secret_question_response(secret)
+            return {
+                "intent": intent,
+                "intent_confidence": intent_confidence,
+                "collected_data": collected_data,
+                "missing_fields": missing_fields,
+                "needs_more_info": True,
+                "is_identified": False,
+                "identification_failed": False,
+                "customer_record": customer_record,
+                "secret_question": secret,
+                "final_response": response,
+            }
         response = build_identified_response(collected_data.get("name"))
         return {
             "intent": intent,

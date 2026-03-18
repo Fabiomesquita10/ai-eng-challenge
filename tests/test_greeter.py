@@ -75,55 +75,59 @@ class TestGreeterIdentified:
     """When 2+ fields match customer."""
 
     def test_name_and_phone_match(self):
-        with patch("app.agents.greeter.extract_identification", return_value={"name": "Fabio Mesquita", "phone": "912345678", "iban": None}):
+        """DirectUser has no secret -> immediate identification."""
+        with patch("app.agents.greeter.extract_identification", return_value={"name": "DirectUser", "phone": "111111111", "iban": None}):
             state = greeter_agent({
-                "user_message": "My phone is 912345678",
+                "user_message": "My phone is 111111111",
                 "conversation_history": [],
                 "collected_data": {},
             })
         assert state["is_identified"] is True
         assert state["needs_more_info"] is False
         assert state["identification_failed"] is False
-        assert state["customer_record"]["name"] == "Fabio Mesquita"
-        assert state["customer_record"]["premium"] is True
+        assert state["customer_record"]["name"] == "DirectUser"
+        assert state["customer_record"]["premium"] is False
         assert "verified" in state["final_response"].lower()
 
     def test_name_and_iban_match(self):
-        """Lisa: name + IBAN."""
+        """Lisa: name + IBAN -> asks secret question (has secret)."""
         with patch("app.agents.greeter.extract_identification", return_value={"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"}):
             state = greeter_agent({
                 "user_message": "I'm Lisa, IBAN DE89370400440532013000",
                 "conversation_history": [],
                 "collected_data": {},
             })
-        assert state["is_identified"] is True
+        assert state["needs_more_info"] is True
+        assert state["is_identified"] is False
         assert state["customer_record"]["name"] == "Lisa"
+        assert "secret" in state["final_response"].lower() or "dog" in state["final_response"].lower()
 
     def test_phone_and_iban_match(self):
-        """2 fields without name."""
+        """2 fields without name -> Fabio has secret, asks question."""
         with patch("app.agents.greeter.extract_identification", return_value={"name": None, "phone": "912345678", "iban": "PT50000000000000000000000"}):
             state = greeter_agent({
                 "user_message": "Phone 912345678, IBAN PT50000000000000000000000",
                 "conversation_history": [],
                 "collected_data": {},
             })
-        assert state["is_identified"] is True
+        assert state["needs_more_info"] is True
         assert state["customer_record"]["name"] == "Fabio Mesquita"
+        assert state["secret_question"] == "What city were you born in?"
 
     def test_merge_from_session_then_identify(self):
-        """Existing session has name, new message adds phone -> identify."""
-        with patch("app.agents.greeter.extract_identification", return_value={"name": None, "phone": "912345678", "iban": None}):
+        """Existing session has name, new message adds phone -> DirectUser (no secret) identifies."""
+        with patch("app.agents.greeter.extract_identification", return_value={"name": None, "phone": "111111111", "iban": None}):
             state = greeter_agent({
-                "user_message": "My phone is 912345678",
+                "user_message": "My phone is 111111111",
                 "conversation_history": [],
-                "collected_data": {"name": "Fabio Mesquita", "phone": None, "iban": None},
+                "collected_data": {"name": "DirectUser", "phone": None, "iban": None},
             })
         assert state["is_identified"] is True
-        assert state["collected_data"]["name"] == "Fabio Mesquita"
-        assert state["collected_data"]["phone"] == "912345678"
+        assert state["collected_data"]["name"] == "DirectUser"
+        assert state["collected_data"]["phone"] == "111111111"
 
     def test_output_includes_intent_and_confidence(self):
-        with patch("app.agents.greeter.extract_identification", return_value={"name": "Fabio Mesquita", "phone": "912345678", "iban": None}):
+        with patch("app.agents.greeter.extract_identification", return_value={"name": "DirectUser", "phone": "111111111", "iban": None}):
             state = greeter_agent({
                 "user_message": "Hi",
                 "conversation_history": [],
@@ -133,6 +137,61 @@ class TestGreeterIdentified:
         assert "intent_confidence" in state
         assert state["intent"] == "card"  # from mock
         assert state["intent_confidence"] == 0.9
+
+
+class TestGreeterSecretQuestion:
+    """Secret question flow: 2/3 match -> ask question -> verify answer."""
+
+    def test_secret_question_asked_on_first_turn(self):
+        """Lisa 2/3 match -> asks secret question."""
+        with patch("app.agents.greeter.extract_identification", return_value={"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"}):
+            state = greeter_agent({
+                "user_message": "I'm Lisa, IBAN DE89370400440532013000",
+                "conversation_history": [],
+                "collected_data": {},
+            })
+        assert state["needs_more_info"] is True
+        assert state["secret_question"] == "Which is the name of my dog?"
+        assert "Yoda" not in state["final_response"]
+
+    def test_secret_answer_correct_identifies(self):
+        """Second turn: correct answer -> is_identified."""
+        with patch("app.agents.greeter.extract_identification", return_value={"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"}):
+            state = greeter_agent({
+                "user_message": "Yoda",
+                "conversation_history": [],
+                "collected_data": {"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"},
+                "customer_record": {"name": "Lisa", "secret": "Which is the name of my dog?", "answer": "Yoda"},
+                "secret_question": "Which is the name of my dog?",
+            })
+        assert state["is_identified"] is True
+        assert state["needs_more_info"] is False
+        assert "verified" in state["final_response"].lower()
+
+    def test_secret_answer_partial_match(self):
+        """Answer contained in message (e.g. 'My dog is Yoda')."""
+        with patch("app.agents.greeter.extract_identification", return_value={"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"}):
+            state = greeter_agent({
+                "user_message": "My dog is Yoda",
+                "conversation_history": [],
+                "collected_data": {"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"},
+                "customer_record": {"name": "Lisa", "secret": "Which is the name of my dog?", "answer": "Yoda"},
+                "secret_question": "Which is the name of my dog?",
+            })
+        assert state["is_identified"] is True
+
+    def test_secret_answer_wrong_fails(self):
+        """Wrong answer -> identification_failed."""
+        with patch("app.agents.greeter.extract_identification", return_value={"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"}):
+            state = greeter_agent({
+                "user_message": "Rex",
+                "conversation_history": [],
+                "collected_data": {"name": "Lisa", "phone": None, "iban": "DE89370400440532013000"},
+                "customer_record": {"name": "Lisa", "secret": "Which is the name of my dog?", "answer": "Yoda"},
+                "secret_question": "Which is the name of my dog?",
+            })
+        assert state["identification_failed"] is True
+        assert state["is_identified"] is False
 
 
 class TestGreeterIdentificationFailed:

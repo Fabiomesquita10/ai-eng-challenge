@@ -21,6 +21,7 @@ The system is designed to mimic a real-world banking support workflow while show
 
 For detailed architecture documentation (workflow, agent responsibilities, design principles), see the **[docs/](./docs/)** folder:
 
+- [Architecture Diagram](./docs/00-ARCHITECTURE_DIAGRAM.md)
 - [System Architecture](./docs/01-ARCHITECTURE.md)
 - [Orchestration Workflow](./docs/02-WORKFLOW.md)
 - [Agent Responsibilities](./docs/03-AGENTS.md)

@@ -118,6 +118,49 @@
       ]
     },
     {
+      "name": "3b. Greeter - Secret Question",
+      "item": [
+        {
+          "name": "Turn 1 - Lisa + IBAN (2/3 match)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"secret-q-1\",\n  \"message\": \"I'm Lisa, IBAN DE89370400440532013000\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["chat"]
+            },
+            "description": "Expect: needs_more_info, asks secret question (Which is the name of my dog?)"
+          }
+        },
+        {
+          "name": "Turn 2 - Answer Yoda (same session)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"secret-q-1\",\n  \"message\": \"Yoda\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8000/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["chat"]
+            },
+            "description": "Expect: is_identified, status completed, route to specialist"
+          }
+        }
+      ]
+    },
+    {
       "name": "4. Greeter - Identification Failed",
       "item": [
         {

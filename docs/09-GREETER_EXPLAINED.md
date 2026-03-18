@@ -11,10 +11,11 @@ The Greeter is the **first agent** in the flow. It:
 1. **Extracts** — intent and identification data (name, phone, IBAN)
 2. **Accumulates** — merges new data with what already exists in the session
 3. **Verifies** — applies the 2/3 rule against the customer database
+4. **Secret question** — if customer has one, asks it before final identification
 
 ---
 
-## Flow (6 steps)
+## Flow (7 steps)
 
 ```
 1. extract_intent(message)           → intent + confidence
@@ -23,17 +24,22 @@ The Greeter is the **first agent** in the flow. It:
 4. compute_missing_fields()          → what's missing
 5. has_minimum_identification_data? → 2+ fields filled?
 6. If yes → verify_legitimacy()      → 2/3 rule
-   If no  → needs_more_info
+7. If 2/3 match + customer has secret → ask secret question (needs_more_info)
+   If 2/3 match + no secret          → is_identified
+   If waiting for secret answer      → verify answer → is_identified or identification_failed
 ```
 
 ---
 
-## Decision: 3 possible outcomes
+## Decision: 4 possible outcomes
 
 | Condition | Result | Typical message |
 |-----------|--------|-----------------|
 | **< 2 fields** | `needs_more_info = True` | "Could you please provide your phone number or IBAN?" |
-| **2+ fields + match** | `is_identified = True` | "Thanks, [name]. I've verified your identity." |
+| **2+ fields + match + has secret** | `needs_more_info = True` | "For security, please answer: Which is the name of my dog?" |
+| **2+ fields + match + no secret** | `is_identified = True` | "Thanks, [name]. I've verified your identity." |
+| **2+ fields + match + secret answer correct** | `is_identified = True` | "Thanks, [name]. I've verified your identity." |
+| **2+ fields + match + secret answer wrong** | `identification_failed = True` | "I couldn't verify your details..." |
 | **2+ fields + no match** | `identification_failed = True` | "I couldn't verify your details with the information provided." |
 
 ---
@@ -65,22 +71,47 @@ The Greeter is the **first agent** in the flow. It:
 
 ---
 
-## Case 2: `is_identified`
+## Case 2a: `needs_more_info` (secret question)
 
-**When:** 2 or more fields are filled and they match a customer in the database.
+**When:** 2+ fields match a customer who has a `secret` and `answer` in the database.
+
+**What happens:**
+- Greeter calls `verify_legitimacy(collected_data)` → match
+- Customer record has `secret` (question) and `answer`
+- Greeter asks the secret question instead of identifying immediately
+- Stores `customer_record` and `secret_question` in session for next turn
+
+**Output:**
+```json
+{
+  "needs_more_info": true,
+  "is_identified": false,
+  "identification_failed": false,
+  "customer_record": { "name": "Lisa", "secret": "Which is the name of my dog?", "answer": "Yoda", ... },
+  "secret_question": "Which is the name of my dog?",
+  "final_response": "For security, please answer: Which is the name of my dog?"
+}
+```
+
+**Next turn:** User provides answer (e.g. "Yoda"). Greeter verifies against `customer_record.answer`. If match → `is_identified`; if not → `identification_failed`.
+
+---
+
+## Case 2b: `is_identified`
+
+**When:** 2+ fields match a customer with no secret, or secret answer was correct.
 
 **2/3 rule:** At least 2 of (name, phone, iban) must match a customer record.
 
 **Examples:**
-- Name + phone → match
-- Name + IBAN → match
-- Phone + IBAN → match
-- All 3 → match
+- Name + phone → match, no secret → identified
+- Name + IBAN → match, secret answered correctly → identified
+- Phone + IBAN → match, no secret → identified
 
 **What happens:**
 - Greeter calls `verify_legitimacy(collected_data)`
-- Verifies against `customers.json`
-- Normalization: phone (digits only), IBAN (no spaces), name (case-insensitive)
+- If customer has no `secret`/`answer` → identify immediately
+- If customer has secret and we're on the answer turn → verify answer (normalized, substring match)
 
 **Output:**
 ```json
@@ -149,7 +180,7 @@ The Greeter is the **first agent** in the flow. It:
 
 ## Summary
 
-The Greeter extracts intent and identification data (name, phone, IBAN) using an LLM, merges it with the session, and applies the 2/3 rule. If there are fewer than 2 fields, it asks for more. If there are 2 or more and match, it marks the customer as identified. If there are 2 or more and no match, it marks identification as failed. The merge supports multi-turn: the user can provide data across multiple messages.
+The Greeter extracts intent and identification data (name, phone, IBAN) using an LLM, merges it with the session, and applies the 2/3 rule. If there are fewer than 2 fields, it asks for more. If there are 2 or more and match, it checks for a secret question: if present, it asks it and waits for the answer; if absent, it identifies immediately. If the secret answer is wrong, identification fails. The merge supports multi-turn: the user can provide data across multiple messages.
 
 ---
 

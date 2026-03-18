@@ -70,14 +70,14 @@ class TestChat:
         assert data.get("customer_type") is None  # Never reached bouncer
 
     def test_chat_identified_premium(self):
-        """Identified premium customer -> bouncer -> specialist_router, returns customer_type and route."""
+        """Identified premium customer (no secret) -> bouncer -> specialist_router."""
         with patch(
             "app.agents.greeter.extract_identification",
-            return_value={"name": "Fabio Mesquita", "phone": "912345678", "iban": None},
+            return_value={"name": "DirectUserPremium", "phone": "333333333", "iban": None},
         ):
             r = client.post(
                 "/chat",
-                json={"session_id": "api-test-premium", "message": "Hi, I am Fabio Mesquita, phone 912345678"},
+                json={"session_id": "api-test-premium", "message": "Hi, I am DirectUserPremium, phone 333333333"},
             )
         assert r.status_code == 200
         data = r.json()
@@ -87,14 +87,14 @@ class TestChat:
         assert data["needs_more_info"] is False
 
     def test_chat_identified_route_general(self):
-        """Unknown intent -> specialist_router fallback to general."""
+        """Unknown intent -> specialist_router fallback to general (DirectUserRegular, no secret)."""
         with patch("app.agents.greeter.extract_intent", return_value=("unknown_intent", 0.5)), patch(
             "app.agents.greeter.extract_identification",
-            return_value={"name": "John Smith", "phone": "+44123456789", "iban": None},
+            return_value={"name": "DirectUserRegular", "phone": "444444444", "iban": None},
         ):
             r = client.post(
                 "/chat",
-                json={"session_id": "api-test-general", "message": "Hi, I'm John Smith, +44123456789"},
+                json={"session_id": "api-test-general", "message": "Hi, I'm DirectUserRegular, 444444444"},
             )
         assert r.status_code == 200
         data = r.json()
@@ -102,14 +102,14 @@ class TestChat:
         assert data["route"] == "general"
 
     def test_chat_identified_regular(self):
-        """Identified regular customer -> bouncer path, returns customer_type=regular."""
+        """Identified regular customer (no secret) -> bouncer path."""
         with patch(
             "app.agents.greeter.extract_identification",
-            return_value={"name": "John Smith", "phone": "+44123456789", "iban": None},
+            return_value={"name": "DirectUserRegular", "phone": "444444444", "iban": None},
         ):
             r = client.post(
                 "/chat",
-                json={"session_id": "api-test-regular", "message": "Hi, I'm John Smith, +44123456789"},
+                json={"session_id": "api-test-regular", "message": "Hi, I'm DirectUserRegular, 444444444"},
             )
         assert r.status_code == 200
         data = r.json()

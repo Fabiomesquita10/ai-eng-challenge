@@ -61,3 +61,8 @@ def build_identified_response(name: Optional[str]) -> str:
     if name:
         return f"Thanks, {name}. I've verified your identity."
     return "Thanks. I've verified your identity."
+
+
+def build_secret_question_response(secret_question: str) -> str:
+    """Build message asking the customer's secret question."""
+    return f"For security, please answer: {secret_question}"
