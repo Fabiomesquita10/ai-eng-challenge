@@ -1,1 +1,32 @@
-{}
+[
+  {
+    "department": "card_support",
+    "topics": ["lost card", "stolen card", "blocked card", "replacement", "PIN reset", "card issue"],
+    "premium_supported": true,
+    "description": "Handles debit and credit card operational issues."
+  },
+  {
+    "department": "loan",
+    "topics": ["loan application", "mortgage", "credit", "interest rates", "refinancing"],
+    "premium_supported": true,
+    "description": "Handles loan and mortgage requests."
+  },
+  {
+    "department": "specialty_insurance",
+    "topics": ["yacht insurance", "marine insurance", "high-value assets", "boat insurance", "car insurance", "home insurance"],
+    "premium_supported": true,
+    "description": "Handles specialized insurance requests for high-value assets."
+  },
+  {
+    "department": "fraud",
+    "topics": ["suspicious transaction", "dispute", "unauthorized charge", "fraud alert"],
+    "premium_supported": true,
+    "description": "Handles fraud detection and dispute resolution."
+  },
+  {
+    "department": "premium",
+    "topics": ["wealth management", "concierge", "premium services", "VIP"],
+    "premium_supported": true,
+    "description": "Handles high-value and premium customer services."
+  }
+]

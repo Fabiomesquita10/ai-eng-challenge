@@ -1,1 +1,20 @@
-{}
+[
+  {
+    "name": "Lisa",
+    "phone": "+1122334455",
+    "iban": "DE89370400440532013000",
+    "premium": true
+  },
+  {
+    "name": "Fabio Mesquita",
+    "phone": "912345678",
+    "iban": "PT50000000000000000000000",
+    "premium": true
+  },
+  {
+    "name": "John Smith",
+    "phone": "+44123456789",
+    "iban": "GB82WEST12345698765432",
+    "premium": false
+  }
+]

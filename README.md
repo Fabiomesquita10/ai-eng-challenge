@@ -17,6 +17,19 @@ The system is designed to mimic a real-world banking support workflow while show
 
 ---
 
+## 📚 Architecture Documentation
+
+For detailed architecture documentation (workflow, agent responsibilities, design principles), see the **[docs/](./docs/)** folder:
+
+- [System Architecture](./docs/01-ARCHITECTURE.md)
+- [Orchestration Workflow](./docs/02-WORKFLOW.md)
+- [Agent Responsibilities](./docs/03-AGENTS.md)
+- [Design Principles](./docs/04-DESIGN_PRINCIPLES.md)
+- [Why LangGraph](./docs/05-WHY_LANGGRAPH.md)
+- [Model Configuration & RAG](./docs/06-MODEL_TRAINING_AND_RAG.md)
+
+---
+
 ## 🧠 System Architecture
 
 The system is built around a **LangGraph-based orchestration layer**, where each node represents a specialized agent.
@@ -24,8 +37,10 @@ The system is built around a **LangGraph-based orchestration layer**, where each
 ### High-Level Flow
 
 ```
-User → Greeter → Bouncer → Specialist Router → Specialist → Guardrails → Response
+User → FastAPI → Greeter → Bouncer → Specialist Router → Specialist → Guardrails → Response
 ```
+
+A **lightweight RAG component** is used inside the **Insurance Specialist Agent** to ground responses on a small internal knowledge base of insurance products, specialty coverage areas, and routing policies. This demonstrates retrieval-augmented reasoning where it adds real value, rather than using retrieval for simple routing decisions.
 
 ### Agents
 
@@ -47,11 +62,12 @@ User → Greeter → Bouncer → Specialist Router → Specialist → Guardrails
 
 #### 📞 Specialist Router Agent
 
+* Rule-first + prompt engineering + LLM fallback (no RAG — rules suffice for routing)
 * Determines the correct domain expert based on:
 
   * User intent
   * Customer type
-  * Request complexity
+  * High-value flag
 
 #### 🎯 Specialist Agents
 
@@ -59,7 +75,7 @@ Dedicated agents for handling specific domains:
 
 * Card Support
 * Loans
-* Insurance
+* **Insurance** *(uses RAG over insurance knowledge base for grounded responses)*
 * Fraud
 * Premium Services
 
@@ -190,20 +206,17 @@ The system enforces strict policies:
 
 ---
 
-## 🧪 Testing Strategy
+## 🧪 Testing
 
-The system is designed to be testable at multiple levels:
+```bash
+pytest tests/ -v
+```
 
-* Unit tests for:
-
-  * Identity verification
-  * Routing logic
-* Integration tests for:
-
-  * Full conversation flows
-* API tests for:
-
-  * `/chat` endpoint
+**Test coverage:**
+* `test_verification.py` — 2/3 rule, phone/name normalization
+* `test_response_builder.py` — merge, missing fields, response building
+* `test_greeter.py` — greeter flows (mocked extraction)
+* `test_api.py` — `/health`, `/chat` endpoints
 
 ---
 
@@ -230,16 +243,39 @@ The system is designed to be testable at multiple levels:
 
 ## 🐳 Running the Project
 
+**Prerequisite:** Create a `.env` file with your OpenAI API key:
+
 ```bash
-docker-compose up --build
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY=sk-your-actual-key
 ```
 
-or
+**Production:**
+```bash
+docker compose up --build
+```
 
+**Development (with reload):**
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+Code changes in `app/` and `docs/` will trigger an automatic reload.
+
+**Local (no Docker):**
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
+
+### Insurance RAG (InsuranceQA-v2 + FAISS)
+
+The Insurance Specialist uses [InsuranceQA-v2](https://huggingface.co/datasets/deccan-ai/insuranceQA-v2) with **FAISS** for vector search. When running with Docker, the dataset (1000 docs) is loaded and the FAISS index is pre-built on container startup. For local development:
+
+```bash
+python scripts/load_insurance_qa.py --max-rows 2000
+```
+
+Options: `--max-rows 0` for all ~28k pairs; `--split validation` or `--split test`. The FAISS index is built on first Insurance query and cached in `app/data/faiss_insurance/`.
 
 ---
 
@@ -249,6 +285,7 @@ uvicorn app.main:app --reload
 * Separated agents by responsibility to reflect real-world systems
 * Avoided overusing LLMs in deterministic logic
 * Implemented session-based memory for multi-turn interactions
+* **RAG in Insurance Specialist** — grounds responses in an internal knowledge base of insurance products and specialty coverage, where retrieval adds real value (rather than using RAG for simple routing)
 
 ---
 
