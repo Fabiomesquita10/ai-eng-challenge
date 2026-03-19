@@ -1,0 +1,52 @@
+# Multi-Agent Banking Support — Architecture Documentation
+
+This folder contains the technical architecture documentation for the AI-powered customer support system, designed for the **AI Engineer Code Challenge**.
+
+---
+
+## 📚 Documentation Index
+
+| Document | Description |
+|----------|-------------|
+| [00 - Architecture Diagram](./00-ARCHITECTURE_DIAGRAM.md) | Mermaid diagrams: system flow, routing, early exits |
+| [01 - System Architecture](./01-ARCHITECTURE.md) | High-level system overview and component flow |
+| [02 - Orchestration Workflow](./02-WORKFLOW.md) | LangGraph flow, routing logic, and state transitions |
+| [03 - Agent Responsibilities](./03-AGENTS.md) | Detailed responsibilities of each agent |
+| [04 - Design Principles](./04-DESIGN_PRINCIPLES.md) | Core design decisions and engineering philosophy |
+| [05 - Why LangGraph](./05-WHY_LANGGRAPH.md) | Rationale for using LangGraph as the orchestration framework |
+| [06 - Model Configuration & RAG](./06-MODEL_TRAINING_AND_RAG.md) | Model setup per agent, prompt design, and RAG strategy (Insurance Specialist) |
+| [07 - API Contract](./07-API.md) | FastAPI endpoints, request/response models, status mapping |
+| [08 - Observability](./08-OBSERVABILITY.md) | LangSmith tracing setup |
+| [09 - Greeter Explained](./09-GREETER_EXPLAINED.md) | Greeter flow, decision logic, and all outcomes |
+| [10 - Bouncer Explained](./10-BOUNCER_EXPLAINED.md) | Bouncer flow, customer classification (premium/regular) |
+| [11 - Specialist Router Explained](./11-SPECIALIST_ROUTER_EXPLAINED.md) | Rule-based intent → specialist_route mapping |
+| [12 - RAG Insurance Pipeline](./12-RAG_INSURANCE_PIPELINE.md) | Hybrid + RRF + Rerank — three-stage retrieval (2024–2025) |
+| [13 - Guardrails Explained](./13-GUARDRAILS_EXPLAINED.md) | Input/output checks, redaction, safe rewrite |
+
+---
+
+## 🎯 Challenge Context
+
+The system addresses the following business problem:
+
+> A customer calls the bank, hoping to get help, but instead, they get lost in an endless phone menu maze.
+
+**Mission:** Build an AI-powered customer support system where multiple agents collaborate to:
+
+- **Identify** the customer  
+- **Classify** them (regular, premium, or not a customer)  
+- **Route** their request to the correct specialist  
+
+All of this should happen **seamlessly**, without the friction of traditional IVR systems.
+
+---
+
+## 🏗️ Quick Reference
+
+```
+User Request → FastAPI (/chat) → Session Manager → Input Guardrails → Greeter → Bouncer → Specialist Router → Specialist → Output Guardrails → Response
+```
+
+---
+
+*For implementation details, see the main [README](../README.md) in the project root.*

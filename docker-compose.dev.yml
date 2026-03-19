@@ -1,0 +1,16 @@
+# Development: reload + volume mount
+# Run: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  app:
+    build: .
+    user: root  # Needed for volume write permissions on reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./app:/app/app
+      - ./docs:/app/docs
+      - ./tests:/app/tests
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1

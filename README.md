@@ -1,96 +1,299 @@
-# 🤖 AI Engineer Code Challenge
+# 🏦 Multi-Agent Banking Support System
 
-## 🎯 Business Requirements
-
-> A customer calls the bank, hoping to get help, but instead, they get lost in an endless phone menu maze. Nightmare, right? Well, not on our watch!
-
-Your mission is to build an **AI-powered customer support system** where multiple agents work together to identify the customer and route them to the right place—without the usual pain of endless phone menus.
-
-Here's how the dream team of AI agents rolls:
-
--   **👋 Agent 1: The Greeter**  
-    This is the friendly face of the bank. It starts the conversation, asks for identification, and makes sure the customer is legitimate.
-
--   **🛡️ Agent 2: The Bouncer**  
-    Once the customer is identified, this agent steps in. It decides: are they a regular customer, a premium client, or not a customer at all?
-
--   **📞 Agent 3: The Specialist**  
-    If the customer has a specific, high-value request (like “Help me with my yacht insurance” 🛥️), this agent ensures they get to the right expert.
-
--   **📜 Guardrails: The Rule Enforcer**  
-    This component keeps everything safe, professional, and aligned with bank policies. No accidental million-dollar loan approvals!
-
-
-## 🛠️ Technical Requirements
-
-Here’s what you need to build and how to deliver it.
-
--   **🏗️ Framework & Structure**: You are free to use `LangGraph` or a similar framework. While a Jupyter Notebook is an acceptable format, remember that the overall structure and design of your solution will be a key part of the evaluation.
--   **🧠 LLM Choice**: You can use any LLM you prefer. Just remember to remove your API keys before submitting!
--   **⚙️ Core Logic**: The system must verify a customer by matching at least **two out of three** details (`name`, `phone`, `iban`) before asking their secret question.
--   **🚀 API Endpoint**: To simulate a real-world application, expose your solution via a `FastAPI` endpoint.
-
-<br>
-
-<details>
-<summary><strong>📄 Click to see example data structures</strong></summary>
-
-```python
-# Example of user data for verification
-example_of_user = {
-  "name": "Lisa",
-  "phone": "+1122334455",
-  "iban": "DE89370400440532013000",
-  "secret" : "Which is the name of my dog?",
-  "answer" : "Yoda"
-}
-```
-
-```python
-# Example of account data to determine status
-example_of_account = {
-  "iban": "DE89370400440532013000",
-  "premiun" : True
-}
-```
-</details>
-
-<br>
-
-<details>
-<summary><strong>💬 Click to see expected responses</strong></summary>
-
-> **Note**: Your responses can be different, but be careful not to leak sensitive user data. For example, phone numbers should only be shown to verified clients.
-
--   **✅ Premium Client:**
-    > "Thank you for reaching out regarding your account issue. As a premium client, we value your experience and are here to assist you. For immediate support, please contact our dedicated support department at +1999888999..."
--   **✅ Regular Client:**
-    > "I'm sorry to hear that you're having trouble with your account. Since you're a regular client, I recommend that you call our support department at +1112112112 for assistance..."
--   **❌ Non-Client:**
-    > "Thank you for reaching out. It seems that you are not currently a client of DEUS Bank. I recommend that you contact your bank's support department directly for assistance..."
-</details>
-
-## 📦 Deliverables
-
-1.  **📈 Architecture Diagram**: A visual diagram (like the example below) illustrating your system's workflow.
-2.  **💻 Working Code**: Your full implementation, including unit tests for key logic.
-3.  **📄 Pull Request(s)**: Use a GitFlow-style approach to submit your features in one or more PRs.
-4.  **💬 Realistic Commits**: A clean Git history with logical, well-described commits.
-5.  **📤 Submission**: Please commit and push your solution directly to this repository.
-
-![Graph example](lang-graph.png?raw=true "Graph example")
+An AI-powered customer support system that uses multiple specialized agents to identify customers and intelligently route their requests—eliminating the friction of traditional banking support flows.
 
 ---
 
-## ✨ Bonus Points
+## 🚀 Overview
 
-Want to go the extra mile? Consider exploring these optional extensions:
+This project implements a **multi-agent architecture** where different AI agents collaborate to:
 
--   **🗣️ Add a Voice Interface**: Integrate text-to-speech (TTS) and speech-to-text (STT) to give your AI a voice.
--   **🔒 Implement Advanced Guardrails**: Add more sophisticated safety mechanisms to prevent harmful, off-topic, or irrelevant responses.
--   **📚 Incorporate Conversation History**: Give your system memory to allow for more natural, context-aware conversations.
--   **🧪 Add Comprehensive Testing**: Implement a robust testing suite to ensure code quality and reliability.
--   **🚀 Implement CI/CD**: Set up a continuous integration and deployment pipeline to automate testing and releases.
--   **🐳 Dockerize the Application**: Package the solution into a Docker container for easy deployment and scalability.
+* Identify and verify customers using partial information
+* Classify customers (regular, premium, or unknown)
+* Route requests to the appropriate specialist
+* Ensure safety, compliance, and professional responses
 
-Now, go forth and build the most epic AI-powered customer support ever! 🚀
+The system is designed to mimic a real-world banking support workflow while showcasing strong **AI engineering practices**, including orchestration, modular design, and controlled use of LLMs.
+
+---
+
+## 📚 Architecture Documentation
+
+For detailed architecture documentation (workflow, agent responsibilities, design principles), see the **[docs/](./docs/)** folder:
+
+- [Architecture Diagram](./docs/00-ARCHITECTURE_DIAGRAM.md)
+- [System Architecture](./docs/01-ARCHITECTURE.md)
+- [Orchestration Workflow](./docs/02-WORKFLOW.md)
+- [Agent Responsibilities](./docs/03-AGENTS.md)
+- [Design Principles](./docs/04-DESIGN_PRINCIPLES.md)
+- [Why LangGraph](./docs/05-WHY_LANGGRAPH.md)
+- [Model Configuration & RAG](./docs/06-MODEL_TRAINING_AND_RAG.md)
+
+---
+
+## 🧠 System Architecture
+
+The system is built around a **LangGraph-based orchestration layer**, where each node represents a specialized agent.
+
+### High-Level Flow
+
+```
+User → FastAPI → Greeter → Bouncer → Specialist Router → Specialist → Guardrails → Response
+```
+
+A **lightweight RAG component** is used inside the **Insurance Specialist Agent** to ground responses on a small internal knowledge base of insurance products, specialty coverage areas, and routing policies. This demonstrates retrieval-augmented reasoning where it adds real value, rather than using retrieval for simple routing decisions.
+
+### Agents
+
+#### 👋 Greeter Agent
+
+* Starts the conversation
+* Extracts intent and identification data (name, phone, IBAN)
+* Verifies customer legitimacy (2 out of 3 rule)
+* Requests missing information when needed
+
+#### 🛡️ Bouncer Agent
+
+* Classifies the customer:
+
+  * Regular
+  * Premium
+  * Not a customer
+* Applies eligibility rules
+
+#### 📞 Specialist Router Agent
+
+* Rule-first + prompt engineering + LLM fallback (no RAG — rules suffice for routing)
+* Determines the correct domain expert based on:
+
+  * User intent
+  * Customer type
+  * High-value flag
+
+#### 🎯 Specialist Agents
+
+Dedicated agents for handling specific domains:
+
+* Card Support
+* Loans
+* **Insurance** *(uses RAG over insurance knowledge base for grounded responses)*
+* Fraud
+* Premium Services
+
+#### 📜 Guardrails
+
+* Ensures compliance with banking policies
+* Prevents unsafe or out-of-scope responses
+* Validates both user input and system output
+
+---
+
+## 🔁 Orchestration (LangGraph)
+
+Agents do not directly call each other.
+
+Instead:
+
+* Each agent updates a shared **conversation state**
+* The orchestration layer routes execution based on that state
+
+This ensures:
+
+* Clear separation of concerns
+* Deterministic control flow
+* Testability and scalability
+
+---
+
+## 🧩 State Management
+
+All agents share a structured state object:
+
+```python
+ConversationState = {
+    "session_id": str,
+    "user_message": str,
+    "conversation_history": list,
+
+    "collected_data": {
+        "name": str | None,
+        "phone": str | None,
+        "iban": str | None
+    },
+
+    "intent": str | None,
+    "is_identified": bool,
+    "needs_more_info": bool,
+
+    "customer_type": str | None,
+    "specialist_route": str | None,
+
+    "final_response": str | None
+}
+```
+
+This enables:
+
+* Multi-turn conversations
+* Memory of previously provided data
+* Incremental reasoning
+
+---
+
+## ⚙️ Tools & Design Philosophy
+
+Each agent uses a set of **tools** (functions/services) to perform specific tasks.
+
+### Key Principles
+
+* **LLMs are used selectively**, for:
+
+  * Intent extraction
+  * Entity extraction
+  * Natural language responses
+
+* **Deterministic logic is used for:**
+
+  * Identity verification (2/3 rule)
+  * Customer classification
+  * Routing logic
+  * Policy enforcement
+
+This hybrid approach ensures both:
+
+* Flexibility (AI)
+* Reliability (engineering)
+
+---
+
+## 🔐 Identity Verification
+
+Customer legitimacy is determined using a **2 out of 3 rule**:
+
+* Name
+* Phone number
+* IBAN
+
+At least two must match a known customer record.
+
+This is implemented using deterministic logic to guarantee consistency and correctness.
+
+---
+
+## 🧭 Routing Logic
+
+Requests are routed based on:
+
+* Intent (e.g., card issue, loan request, insurance)
+* Customer type (regular vs premium)
+* Special cases (e.g., fraud, high-value services)
+
+Example:
+
+* “Lost my card” → Card Specialist
+* “Yacht insurance” → Insurance Specialist
+* Premium + wealth request → Premium Specialist
+
+---
+
+## 🛡️ Guardrails
+
+The system enforces strict policies:
+
+* Blocks unsafe requests (e.g., unauthorized actions)
+* Prevents data leakage
+* Ensures responses remain within system scope
+* Rewrites unsafe outputs if necessary
+
+---
+
+## 🧪 Testing
+
+```bash
+pytest tests/ -v
+```
+
+**Test coverage:**
+* `test_verification.py` — 2/3 rule, phone/name normalization
+* `test_response_builder.py` — merge, missing fields, response building
+* `test_greeter.py` — greeter flows (mocked extraction)
+* `test_api.py` — `/health`, `/chat` endpoints
+
+---
+
+## 🌐 API
+
+### POST `/chat`
+
+```json
+{
+  "session_id": "abc-123",
+  "message": "Hi, I lost my card"
+}
+```
+
+### Response
+
+```json
+{
+  "response": "Thanks, Fabio. To verify your identity, could you provide your phone number or IBAN?"
+}
+```
+
+---
+
+## 🐳 Running the Project
+
+**Prerequisite:** Create a `.env` file with your OpenAI API key:
+
+```bash
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY=sk-your-actual-key
+```
+
+**Production:**
+```bash
+docker compose up --build
+```
+
+**Development (with reload):**
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+Code changes in `app/` and `docs/` will trigger an automatic reload.
+
+**Local (no Docker):**
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+### Insurance RAG (InsuranceQA-v2 + FAISS)
+
+The Insurance Specialist uses [InsuranceQA-v2](https://huggingface.co/datasets/deccan-ai/insuranceQA-v2) with **FAISS** for vector search. When running with Docker, the dataset (1000 docs) is loaded and the FAISS index is pre-built on container startup. For local development:
+
+```bash
+python scripts/load_insurance_qa.py --max-rows 2000
+```
+
+Options: `--max-rows 0` for all ~28k pairs; `--split validation` or `--split test`. The FAISS index is built on first Insurance query and cached in `app/data/faiss_insurance/`.
+
+---
+
+## 📌 Design Decisions
+
+* Used **LangGraph** for explicit orchestration and state-driven routing
+* Separated agents by responsibility to reflect real-world systems
+* Avoided overusing LLMs in deterministic logic
+* Implemented session-based memory for multi-turn interactions
+* **RAG in Insurance Specialist** — grounds responses in an internal knowledge base of insurance products and specialty coverage, where retrieval adds real value (rather than using RAG for simple routing)
+
+---
+
+## 🤝 Final Notes
+
+This project aims to demonstrate not just AI capabilities, but **strong system design, clarity of architecture, and production-oriented thinking**.
+
+---
+
+Made with a focus on clean architecture, reliability, and real-world applicability.
